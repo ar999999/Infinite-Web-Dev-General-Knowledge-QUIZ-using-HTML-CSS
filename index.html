@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Web Dev Quiz by Athrav Rajmane </title>
+  <style>
+    :root {
+      --bg: #f0f4f8;
+      --text: #001f3f;
+      --card-bg: #ffffff;
+      --btn-bg: #001f3f;
+      --btn-text: #ffffff;
+      --btn-hover: #003366;
+    }
+    body[data-theme="dark"] {
+      --bg: #001f3f;
+      --text: #f0f4f8;
+      --card-bg: #002244;
+      --btn-bg: #f0f4f8;
+      --btn-text: #001f3f;
+      --btn-hover: #bbbbbb;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .toggle-container {
+      text-align: right;
+    }
+    .toggle-container button {
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      transition: background 0.3s;
+    }
+    .toggle-container button:hover {
+      background: var(--btn-hover);
+    }
+    .quiz-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      max-width: 600px;
+      margin: auto;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .answers button {
+      display: block;
+      width: 100%;
+      margin: 8px 0;
+      padding: 10px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .answers button.correct { background: #28a745; }
+    .answers button.wrong { background: #dc3545; }
+    .answers button:hover { background: var(--btn-hover); }
+    #next-btn {
+      margin-top: 15px;
+      padding: 10px 20px;
+      background: var(--btn-bg);
+      color: var(--btn-text);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 0.9em;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="toggle-container">
+    <button id="theme-toggle">Switch to Dark Mode</button>
+  </div>
+
+  <div class="quiz-card">
+    <h1>Web Dev Quiz</h1>
+    <div id="question">Loading question...</div>
+    <div class="answers" id="answers"></div>
+    <button id="next-btn">Next</button>
+    <p id="score"></p>
+  </div>
+
+  <div class="footer">
+    &copy; 2025 WebDev Quiz -By Athrav Rajmane  • All rights reserved
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById('theme-toggle');
+    const body = document.body;
+    toggleBtn.addEventListener('click', () => {
+      const current = body.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      body.setAttribute('data-theme', next);
+      toggleBtn.textContent = current === 'light' ? 'Switch to Light Mode' : 'Switch to Dark Mode';
+      localStorage.setItem('theme', next);
+    });
+    window.addEventListener('load', () => {
+      const stored = localStorage.getItem('theme');
+      if (stored) {
+        body.setAttribute('data-theme', stored);
+        toggleBtn.textContent = stored === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+      }
+      loadQuestion();
+    });
+
+    const questionEl = document.getElementById('question');
+    const answersEl = document.getElementById('answers');
+    const nextBtn = document.getElementById('next-btn');
+    const scoreEl = document.getElementById('score');
+    let current, score = 0, answered = false;
+
+    function shuffle(arr) {
+      return arr.sort(() => Math.random() - 0.5);
+    }
+
+    function loadQuestion() {
+      answered = false;
+      scoreEl.textContent = '';
+      fetch("https://opentdb.com/api.php?amount=1&category=18&type=multiple")
+        .then(res => res.json())
+        .then(data => {
+          current = data.results[0];
+          questionEl.innerHTML = decodeHTML(current.question);
+          const opts = shuffle([current.correct_answer, ...current.incorrect_answers]);
+          answersEl.innerHTML = '';
+          opts.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.innerHTML = decodeHTML(opt);
+            btn.addEventListener('click', () => selectAnswer(btn, opt));
+            answersEl.appendChild(btn);
+          });
+        });
+    }
+
+    function selectAnswer(btn, opt) {
+      if (answered) return;
+      answered = true;
+      const correct = decodeHTML(current.correct_answer);
+      Array.from(answersEl.children).forEach(c => {
+        c.disabled = true;
+        if (c.innerHTML === correct) c.classList.add('correct');
+        else c.classList.add('wrong');
+      });
+      if (btn.innerHTML === correct) {
+        score++;
+        scoreEl.textContent = `Correct! Your score: ${score}`;
+      } else {
+        scoreEl.textContent = `Wrong! Your score: ${score}`;
+      }
+    }
+
+    nextBtn.addEventListener('click', () => loadQuestion());
+
+    function decodeHTML(html) {
+      const txt = document.createElement("textarea");
+      txt.innerHTML = html;
+      return txt.value;
+    }
+  </script>
+</body>
+</html>
